@@ -1,6 +1,35 @@
 #include "TristansLibrary.h"
 
 
+Randumb::Randumb(unsigned long long seed) {
+    s = seed;
+};
+unsigned long long Randumb::Next() {
+    s = s * 9 + 1; // modulus this by an odd number, an even number mod leads to alternating between odd and even numbers, therefore you also never get the same number twice or more in a row
+    return s;
+}
+int Randumb::NextRanged(int min, int max) {
+    unsigned int width = max - min;
+    int offset = max - width;
+    return (Next() % width) + offset;
+}
+float Randumb::NextFloat0To1() {
+    int resolution = 1000000001;
+    if (s < 111111111) { // to prevent several low numbers in a row everytime the seed is below the resolution / 9
+        s *= 12345;
+    }
+    return (float)(Next() % resolution) / resolution;
+}
+float Randumb::NextRangedFloat(float min, float max) {
+    float r = NextFloat0To1();
+    float width = max - min;
+    float offset = max - width;
+    return (width * r) + offset;
+}
+bool Randumb::CoinFlip() {
+    return (Next() % 100) >= 50;
+}
+
 unsigned int randumb32(void) { 
     static unsigned int z1 = 3, z2 = 7, z3 = 13, z4 = 19;
     z1 = z1 * 9 + 1; // equation gets all 4,294,967,296 numbers
@@ -21,7 +50,7 @@ unsigned int randumb32(void) {
 }
 unsigned short randumb16(void) {
     static unsigned short z1 = 3, z2 = 7, z3 = 13, z4 = 19;
-    z1 = z1 * 9 + 1; // equation gets all 65536 numbers
+    z1 = z1 * 9 + 1; 
     if (z1 == 3) {
         z2 = z2 * 9 + 1;
         if (z2 == 7) {
@@ -48,126 +77,8 @@ unsigned int lfsr113_Bits(void)
     return (z1 ^ z2 ^ z3 ^ z4);
 }
 
-Randumb::Randumb() {
-    time_t t;
-    time(&t);
-    s = t;
-}
-Randumb::Randumb(unsigned long long seed) {
-    s = seed;
-};
-unsigned long long Randumb::Next() {
-    s = (s * 9 + 1); // modulus this by an odd number, an even number mod leads to alternating between odd and even numbers, therefore you also never get the same number twice or more in a row
-    return s;
-}
-int Randumb::NextRanged(int min, int max) {
-    unsigned int width = max - min;
-    int offset = max - width;
-    return (Next() % width) + offset;
-}
-float Randumb::NextFloat0To1() {
-    int resolution = 1000000001;
-    if (s < 111111111) { // to prevent several low numbers in a row everytime the seed is below the resolution / 9
-        s *= 12345;
-    }
-    return (float)(Next() % resolution) / resolution;
-}
-float Randumb::NextRangedFloat(float min, float max) {
-    float r = NextFloat0To1();
-    float width = max - min;
-    float offset = max - width;
-    return (width * r) + offset;
-}
-bool Randumb::CoinFlip() {
-    return (Next() % 100) >= 50;
-}
-
-
-Float3::Float3() {
-    x = 0;
-    y = 0;
-    z = 0;
-};
-Float3::Float3(float xC, float yC, float zC) {
-    x = xC;
-    y = yC;
-    z = zC;
-}
-Float3 Float3::operator*(float f) {
-    Float3 ret(x, y, z);
-    ret.x *= f;
-    ret.y *= f;
-    ret.z *= f;
-    return ret;
-}
-Float3 Float3::operator+(Float3 v) {
-    Float3 ret(x, y, z);
-    ret.x += v.x;
-    ret.y += v.y;
-    ret.z += v.z;
-    return ret;
-}
-float Float3::DotProduct(Float3 v) {
-    return (x * v.x) + (y * v.y) + (z * v.z);
-}
-
-
-Plane::Plane() {
-    a = Float3();
-    b = Float3();
-    c = Float3();
-}
-Plane::Plane(Float3 aC, Float3 bC, Float3 cC) {
-    a = aC;
-    b = bC;
-    c = cC;
-}
-Plane::Plane(Float3 aC, Float3 bC, Float3 cC, Float3 norm) {
-    a = aC;
-    b = bC;
-    c = cC;
-    normal = norm;
-}
-// TODO: this function
-bool Plane::PointIsOnPositiveSideOfPlane(Float3 p) {
-
-
-}
-
-
-Transform::Transform() {
-    right = Float3();
-    up = Float3();
-    forward = Float3();
-    position = Float3();
-}
-Transform::Transform(Float3 r, Float3 u, Float3 f) {
-    right = r;
-    up = u;
-    forward = f;
-    position = Float3();
-}
-Transform::Transform(Float3 r, Float3 u, Float3 f, Float3 p) {
-    right = r;
-    up = u;
-    forward = f;
-    position = p;
-}
-Transform::Transform(Float3 p) {
-    right = Float3();
-    up = Float3();
-    forward = Float3();
-    position = p;
-}
-Float3 Transform::LocalPointToWorldSpace(Float3 p) {
-    Float3 u1 = right * p.x;
-    Float3 u2 = up * p.y;
-    Float3 u3 = forward * p.z;
-    return u1 + u2 + u3;
-}
-
-
-bool AABBIsInFrustumPlanes(Float3*corners, Plane *planes)
+/*
+bool intAABBIsInFrustumPlanes(int* corners, float* planes)
 {
     bool inFrustum;
     for (int i = 0; i < 6; i++)
@@ -186,10 +97,69 @@ bool AABBIsInFrustumPlanes(Float3*corners, Plane *planes)
         }
     }
     return true;
+}*/
+
+void setBit(int& bytes, int bitIndex, bool value) {
+    bytes &= ~(value << bitIndex);
 }
-
-
-// miscellaneous functions
+bool getBit(int bytes, int bitIndex) {
+    return (bytes & (1 << bitIndex)) > 0;
+}
+void setByte(int& bytes, char byte, char byteIndex) {
+    char shift = 8 * byteIndex;
+    bytes &= ~(15 << shift); // clearing the byte
+    bytes |= byte << shift; // setting the byte
+}
+char getByte(int bytes, char byteIndex) {
+    return (bytes >> (byteIndex * 8)) & 255;
+}
+char bitCount(int bytes) {
+    int b = bytes;
+    unsigned char count = 0;
+    while (b > 0) {
+        count++;
+        b >>= 1;
+    }
+    return count;
+}
+char bitHighCount(int bytes) {
+    int b = bytes;
+    unsigned char count = 0;
+    while (b > 0) {
+        if (b % 2 == 1) {
+            count++;
+        }
+        b >>= 1;
+    }
+    return count;
+}
+char bitLowCount(int bytes, char stopIndex) {
+    int b = bytes;
+    unsigned char count = 0;
+    char counter2 = 0;
+    while (b > 0) {
+        if (b % 2 == 0) {
+            count++;
+        }
+        b >>= 1;
+        counter2++;
+        if (counter2 >= stopIndex) {
+            break;
+        }
+    }
+    return count;
+}
+int getBits(int bytes, char startIndex, char stopIndex) {
+    return (bytes >> startIndex) & ~(~0 << stopIndex);
+}
+int shiftBitsRightFromIndex(int bytes, char index, unsigned char shift) {
+    int bitsToKeepMask = ~0 << index;
+    int bitsToKeep = bytes & bitsToKeepMask;
+    int bH = bytes & ~bitsToKeepMask;
+    bH >>= shift;
+    bH |= bitsToKeep;
+    return bH;
+}
 
 void addIntNoOverflowOrUnderflow(int& n, int add) {
     if (add >= 0) {
@@ -222,7 +192,6 @@ void addUnsignedIntNoOverflowOrUnderflow(unsigned int& n, int add) {
     }
     n = n + add;
 }
-
 float averageInt(int* ints, int size) {
     int avg = 0;
     for (int i = 0; i < size; i++) {
@@ -236,4 +205,100 @@ float averageFloat(float* floats, int size) {
         avg += floats[i];
     }
     return avg / size;
+}
+int powInt(int n, unsigned short p) {
+    int nH = n;
+    for (unsigned int i = 0; i < p; i++) {
+        n *= nH;
+    }
+    return n;
+}
+unsigned short isqrt16(unsigned short num) {
+    unsigned short res = 0;
+    unsigned short bit = 1 << 14; // The second-to-top bit is set: 1L<<30 for long
+    // "bit" starts at the highest power of four <= the argument.
+    while (bit > num)
+        bit >>= 2;
+    while (bit != 0) {
+        if (num >= res + bit) {
+            num -= res + bit;
+            res = (res >> 1) + bit;
+        }
+        else
+            res >>= 1;
+        bit >>= 2;
+    }
+    return res;
+}
+unsigned int isqrt(unsigned int num) {
+    unsigned int res = 0;
+    unsigned int bit = 1 << 30; // The second-to-top bit is set: 1L<<30 for long // "bit" starts at the highest power of four <= the argument.
+    while (bit > num) {
+        bit >>= 2;
+    }
+    while (bit != 0) {
+        if (num >= res + bit) {
+            num -= res + bit;
+            res = (res >> 1) + bit;
+        }
+        else {
+            res >>= 1;
+        }
+        bit >>= 2;
+    }
+    return res;
+}
+
+unsigned int fastIntDistSqr(int* a, int* b) {
+    int x = a[0] - b[0];
+    int y = a[1] - b[1];
+    int z = a[2] - b[2];
+    return (x * x) + (y * y) + (z * z);
+}
+int dotProductInt3(int* a, int* b) {
+    return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+}
+void addIntArrays(int* dest, int* n, int size) {
+    for (int i = 0; i < size; i++) {
+        dest[i] += n[i];
+    }
+}
+void addInt3s(int* dest, int* n) {
+    dest[0] += n[0];
+    dest[1] += n[1];
+    dest[2] += n[2];
+}
+void add3Int3s(int* dest, int* n, int* n1) {
+    dest[0] += n[0] + n1[0];
+    dest[1] += n[1] + n1[1];
+    dest[2] += n[2] + n1[2];
+}
+void subInt3s(int* dest, int* n) {
+    dest[0] -= n[0];
+    dest[1] -= n[1];
+    dest[2] -= n[2];
+}
+void multInt3ByInt(int* dest, int n) {
+    dest[0] *= n;
+    dest[1] *= n;
+    dest[2] *= n;
+}
+void multInt3s(int* dest, int* n) {
+    dest[0] *= n[0];
+    dest[1] *= n[1];
+    dest[2] *= n[2];
+}
+void localIntPointToWorldSpace(int* right, int* up, int* forward, int* p, int* returnPtr) {
+
+    int u1[3] = { right[0], right[1], right[2] };
+    int u2[3] = { up[0], up[1], up[2] };
+    int u3[3] = { forward[0], forward[1], forward[2] };
+
+    multInt3ByInt(u1, p[0]);
+    multInt3ByInt(u2, p[1]);
+    multInt3ByInt(u3, p[2]);
+
+    add3Int3s(u1, u2, u3);
+
+    returnPtr = u1;
 }
