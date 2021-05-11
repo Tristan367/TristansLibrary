@@ -378,6 +378,26 @@ namespace trt {
         returnPtr[2] = r[2] + transform.position[2];
     }
 
+    bool aabbIsInFrustumPlanes(float** corners, Plane* frustumPlanes)
+    {
+        bool positiveSideOfPlane;
+        for (int i = 0; i < 4; i++) // for each plane
+        {
+            positiveSideOfPlane = false;
+            for (int j = 0; j < 8; j++) // for each corner
+            {
+                if (pointIsOnPositiveSideOfPlane(corners[j], frustumPlanes[i]))
+                {
+                    positiveSideOfPlane = true;
+                }
+            }
+            if (!positiveSideOfPlane) // if all of the corners are outside of even one plane, we know it is not in the frustum
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     struct ListItem {
         ListItem* prev = NULL;
@@ -469,24 +489,4 @@ namespace trt {
 
 
 
-/*
-bool intAABBIsInFrustumPlanes(int* corners, float* planes)
-{
-    bool inFrustum;
-    for (int i = 0; i < 6; i++)
-    {
-        inFrustum = false;
-        for (int j = 0; j < 8; j++)
-        {
-            if (planes[i].PointIsOnPositiveSideOfPlane(corners[j]))
-            {
-                inFrustum = true;
-            }
-        }
-        if (!inFrustum)
-        {
-            return false;
-        }
-    }
-    return true;
-}*/
+
