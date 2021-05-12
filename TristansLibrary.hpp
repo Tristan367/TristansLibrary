@@ -10,7 +10,7 @@ public:
         s = seed;
     };
     unsigned long long Next() {
-        s = s * 9 + 1; // modulus this by an odd number, an even number mod leads to alternating between odd and even numbers, therefore you also never get the same number twice or more in a row
+        s = s * 12345 + 1; // modulus this by an odd number, an even number mod leads to alternating between odd and even numbers, therefore you also never get the same number twice or more in a row
         return s;
     }
     int NextRanged(int min, int max) {
@@ -242,7 +242,6 @@ namespace trt {
         return n;
     }
 
-   
 
     void capInt(int &n, int low, int high) {
         if (n > high) {
@@ -327,6 +326,11 @@ namespace trt {
         dest[1] *= n;
         dest[2] *= n;
     }
+    void getFloat3MultByF(float* float3, float n, float* returnPtr) {
+       returnPtr[0] = float3[0] * n;
+       returnPtr[1] = float3[1] * n;
+       returnPtr[2] = float3[2] * n;
+    }
     void add3Float3s(float* dest, float* n, float* n1) {
         dest[0] += n[0] + n1[0];
         dest[1] += n[1] + n1[1];
@@ -345,15 +349,18 @@ namespace trt {
         returnPtr[1] = (b[0] * a[2]) - (a[0] * b[2]);
         returnPtr[2] = (a[0] * b[1]) - (b[0] * a[1]);
     }
-    bool pointIsOnPositiveSideOfPlane(float* point, Plane plane)
-    {
+
+    void calculateNormal(Plane& plane) {
         float abVector[3];
         getSubFloat3s(plane.a, plane.b, abVector);
         float acVector[3];
         getSubFloat3s(plane.a, plane.c, acVector);
+        crossProduct(abVector, acVector, plane.n);
+    }
+    bool pointIsOnPositiveSideOfPlane(float* point, Plane plane)
+    {
         float paVector[3];
         getSubFloat3s(point, plane.a, paVector);
-        crossProduct(abVector, acVector, plane.n);
         if (dotProduct(plane.n, paVector) >= 0)
         {
             return true;
@@ -361,11 +368,16 @@ namespace trt {
         return false;
     }
 
+
     void localPointToWorldSpace(Transform transform, float* p, float* returnPtr) {
 
-        float r[3] = { transform.right[0], transform.right[1], transform.right[2] };
-        float u[3] = { transform.up[0], transform.up[1], transform.up[2] };
-        float f[3] = { transform.forward[0], transform.forward[1], transform.forward[2] };
+        float r[3];
+        float u[3];
+        float f[3];
+
+        getFloat3MultByF(transform.right, p[0], r);
+        getFloat3MultByF(transform.up, p[1], u);
+        getFloat3MultByF(transform.forward, p[2], f);
 
         multFloat3ByF(r, p[0]);
         multFloat3ByF(u, p[1]);
@@ -389,6 +401,7 @@ namespace trt {
                 if (pointIsOnPositiveSideOfPlane(corners[j], frustumPlanes[i]))
                 {
                     positiveSideOfPlane = true;
+                    break; // at least one corner is in the frustmu
                 }
             }
             if (!positiveSideOfPlane) // if all of the corners are outside of even one plane, we know it is not in the frustum
@@ -396,7 +409,7 @@ namespace trt {
                 return false;
             }
         }
-        return true;
+        return true; // if there is at least one corner on the positive side of all four frustum planes
     }
 
     struct ListItem {
